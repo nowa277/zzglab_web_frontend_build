@@ -146,7 +146,6 @@ work/
 ### 3.1 启动本地服务器
 
 ```bash
-cd /home/user/Documents/Codex/2026-07-11/q
 python3 -m http.server 8123 --bind 127.0.0.1
 ```
 
@@ -171,8 +170,6 @@ http://127.0.0.1:8123/zh/
 ### 3.2 基础静态检查
 
 ```bash
-cd /home/user/Documents/Codex/2026-07-11/q
-
 # 不应出现旧邮箱、mailto、已删除校徽或旧复制浮层
 rg -n '850194283@qq\.com|admin@zzglab\.com|mailto:|gdmu-emblem|copy-hint' \
   --glob '*.html' --glob '*.css' --glob '*.js' .
@@ -236,30 +233,17 @@ echo "$VERSION"
 ### 4.3 上传到新 release
 
 ```bash
-ssh lab04 "test ! -e '$ROOT/releases/$VERSION' && mkdir -p '$ROOT/releases/$VERSION'"
+# 在lab04上操作
+test ! -e '$ROOT/releases/$VERSION' && mkdir -p '$ROOT/releases/$VERSION'
 rsync -a --delete "$BUILD/" "lab04:$ROOT/releases/$VERSION/"
 ```
 
 不要将文件直接覆盖到 `current`。
 
-### 4.4 核对上传前后 SHA-256
+### 4.4 原子切换 current
 
 ```bash
-ssh lab04 "cd '$ROOT/releases/$VERSION' && \
-  find . -type f -print0 | sort -z | xargs -0 sha256sum" \
-  > "/tmp/zzglab-$VERSION.remote.sha256"
-
-diff -u \
-  "/tmp/zzglab-$VERSION.local.sha256" \
-  "/tmp/zzglab-$VERSION.remote.sha256"
-```
-
-`diff` 必须无输出且退出码为 0。若不一致，不要切换 `current`，应重新上传并查明原因。
-
-### 4.5 原子切换 current
-
-```bash
-ssh lab04 "set -e
+set -e
 cd '$ROOT'
 ln -sfn 'releases/$VERSION' current.next
 mv -Tf current.next current
@@ -267,7 +251,6 @@ printf '%s\n' '$VERSION' > DEPLOYED_RELEASE
 readlink current
 cat DEPLOYED_RELEASE
 curl -fsS http://127.0.0.1:18088/health
-"
 ```
 
 预期：
@@ -276,10 +259,10 @@ curl -fsS http://127.0.0.1:18088/health
 - `DEPLOYED_RELEASE` 输出新版本号
 - 健康检查输出 `ok`
 
-### 4.6 源站逐页检查
+### 4.5 源站逐页检查
 
 ```bash
-ssh lab04 'set -e
+set -e
 for path in \
   / /index.html /team.html /research.html /facilities.html /projects.html /join.html \
   /zh/index.html /zh/team.html /zh/research.html /zh/facilities.html /zh/projects.html /zh/join.html \
@@ -289,10 +272,9 @@ do
   printf "%-45s %s\n" "$path" "$code"
   test "$code" = 200
 done
-'
 ```
 
-### 4.7 清除 Cloudflare 缓存
+### 4.6 清除 Cloudflare 缓存
 
 每次发布或回滚后都必须执行：
 
@@ -306,7 +288,7 @@ Cloudflare Dashboard
 
 不要把 Cloudflare Global API Key、API Token 或 Tunnel Token 写入源码、构建目录、命令历史、部署报告或本文。当前最可靠的人工方式是 Dashboard 全量清缓存。
 
-### 4.8 公网 HTTPS 检查
+### 4.7 公网 HTTPS 检查
 
 ```bash
 for path in \
@@ -334,7 +316,7 @@ curl -sI https://zzglab.com/health | grep -i cf-cache-status
 
 还应使用桌面和手机浏览器真实打开公网版本，检查新样式确实加载、语言切换和邮箱复制正常。
 
-### 4.9 更新部署报告并保留三个版本
+### 4.8 更新部署报告并保留三个版本
 
 部署验证成功后更新：
 
@@ -353,14 +335,14 @@ curl -sI https://zzglab.com/health | grep -i cf-cache-status
 先列出版本：
 
 ```bash
-ssh lab04 'find /home/4-CC/changshengjie/lab-web-build/releases \
-  -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort'
+find /home/4-CC/changshengjie/lab-web-build/releases \
+  -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort
 ```
 
 确认新版本稳定后，只保留最近三个有效版本。删除前必须确认目标不是 `current`，也不是计划保留的回滚版本。应明确填写旧版本名，不要使用未经检查的通配符：
 
 ```bash
-ssh lab04 'rm -rf /home/4-CC/changshengjie/lab-web-build/releases/<明确的旧版本号>'
+rm -rf /home/4-CC/changshengjie/lab-web-build/releases/<明确的旧版本号>
 ```
 
 最后清理本地临时构建目录：
@@ -374,12 +356,11 @@ rm -rf "$BUILD"
 ### 5.1 查看可回滚版本
 
 ```bash
-ssh lab04 'set -e
+set -e
 ROOT=/home/4-CC/changshengjie/lab-web-build
 cat "$ROOT/DEPLOYED_RELEASE"
 readlink "$ROOT/current"
 find "$ROOT/releases" -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort
-'
 ```
 
 ### 5.2 原子回滚
@@ -390,7 +371,7 @@ find "$ROOT/releases" -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort
 ROLLBACK=<目标版本号>
 ROOT=/home/4-CC/changshengjie/lab-web-build
 
-ssh lab04 "set -e
+set -e
 cd '$ROOT'
 test -d 'releases/$ROLLBACK'
 ln -sfn 'releases/$ROLLBACK' current.next
@@ -398,7 +379,6 @@ mv -Tf current.next current
 printf '%s\n' '$ROLLBACK' > DEPLOYED_RELEASE
 curl -fsS http://127.0.0.1:18088/health
 readlink current
-"
 ```
 
 回滚后同样必须：
@@ -416,19 +396,19 @@ readlink current
 curl -fsS https://zzglab.com/health
 curl -sI https://zzglab.com/ | grep -iE 'cf-cache-status|age|cache-control'
 
-ssh lab04 'systemctl is-active nginx docker'
-ssh lab04 'systemctl is-enabled nginx docker'
-ssh lab04 'curl -fsS http://127.0.0.1:18088/health'
-ssh lab04 'sudo nginx -t'
+systemctl is-active nginx docker
+systemctl is-enabled nginx docker
+curl -fsS http://127.0.0.1:18088/health
+sudo nginx -t
 ```
 
 ### 6.2 Tunnel
 
 ```bash
-ssh lab04 'sudo docker inspect cloudflared-lab-web-build \
-  --format "status={{.State.Status}} restart={{.RestartCount}} policy={{.HostConfig.RestartPolicy.Name}}"'
+sudo docker inspect cloudflared-lab-web-build \
+  --format "status={{.State.Status}} restart={{.RestartCount}} policy={{.HostConfig.RestartPolicy.Name}}"
 
-ssh lab04 'sudo docker logs --tail 100 cloudflared-lab-web-build'
+sudo docker logs --tail 100 cloudflared-lab-web-build
 ```
 
 这些命令不会读取或输出 Tunnel Token。
@@ -436,14 +416,13 @@ ssh lab04 'sudo docker logs --tail 100 cloudflared-lab-web-build'
 ### 6.3 版本与空间
 
 ```bash
-ssh lab04 'set -e
+set -e
 ROOT=/home/4-CC/changshengjie/lab-web-build
 cat "$ROOT/DEPLOYED_RELEASE"
 readlink -f "$ROOT/current"
 find "$ROOT/releases" -mindepth 1 -maxdepth 1 -type d -printf "%f\n" | sort
 du -sh "$ROOT" "$ROOT"/releases/*
 df -h /home/4-CC
-'
 ```
 
 ## 7. 禁止事项
