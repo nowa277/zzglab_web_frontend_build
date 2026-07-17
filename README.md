@@ -14,7 +14,6 @@
 - 网站：<https://zzglab.com>
 - 类型：纯静态中英文多页面网站
 - 无构建框架、数据库、后端 API、登录或上传功能
-- 本地唯一编辑源：`/home/user/Documents/Codex/2026-07-11/q`
 - 生产服务器：`lab04`
 - 生产根目录：`/home/4-CC/changshengjie/lab-web-build`
 
