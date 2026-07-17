@@ -1,5 +1,5 @@
 # zzglab_web_frontend_build
-用你的codex帮我们改进网页！
+用你的codex帮我们改进网页！克隆到本地仓库修改了以后请通过Pull Request回传修改文件至本仓库 ^ ^
 
 # zzglab.com 部署与维护手册
 
