@@ -7,7 +7,6 @@ const languageMenus = document.querySelectorAll('[data-language-menu]');
 const inertTargets = document.querySelectorAll('main, .site-footer');
 const focusableSelector = 'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])';
 const languageStorageKey = 'zzglab-language';
-const contactEmail = ['talent', 'zzglab.com'].join('@');
 
 function setBackgroundInert(inert) {
   inertTargets.forEach((element) => {
@@ -116,54 +115,6 @@ document.querySelectorAll('[data-language-switch]').forEach((link) => {
       document.cookie = `${languageStorageKey}=${encodeURIComponent(targetLanguage)}; Max-Age=31536000; Path=/; SameSite=Lax`;
     }
     if (location.hash) link.href = `${link.href.split('#')[0]}${location.hash}`;
-  });
-});
-
-const copyTimers = new WeakMap();
-
-async function writeToClipboard(value) {
-  if (window.isSecureContext && navigator.clipboard?.writeText) {
-    await navigator.clipboard.writeText(value);
-    return;
-  }
-
-  const textarea = document.createElement('textarea');
-  textarea.value = value;
-  textarea.setAttribute('readonly', '');
-  textarea.style.position = 'fixed';
-  textarea.style.opacity = '0';
-  document.body.append(textarea);
-  textarea.select();
-  const copied = document.execCommand('copy');
-  textarea.remove();
-  if (!copied) throw new Error('Clipboard copy failed');
-}
-
-document.querySelectorAll('[data-copy-email]').forEach((button) => {
-  button.addEventListener('click', async () => {
-    const action = button.querySelector('[data-copy-action]');
-    const status = button.querySelector('[data-copy-status]');
-    const copiedLabel = button.dataset.copiedLabel || 'Copied';
-    const resetLabel = button.dataset.copyLabel || 'Copy';
-    const failedLabel = body.dataset.lang === 'zh' ? '复制失败' : 'Copy failed';
-    clearTimeout(copyTimers.get(button));
-
-    try {
-      await writeToClipboard(contactEmail);
-      button.classList.add('is-copied');
-      if (action) action.textContent = copiedLabel;
-      if (status) status.textContent = copiedLabel;
-    } catch {
-      button.classList.add('is-copied');
-      if (action) action.textContent = failedLabel;
-      if (status) status.textContent = failedLabel;
-    }
-
-    copyTimers.set(button, window.setTimeout(() => {
-      button.classList.remove('is-copied');
-      if (action) action.textContent = resetLabel;
-      if (status) status.textContent = '';
-    }, 1800));
   });
 });
 
